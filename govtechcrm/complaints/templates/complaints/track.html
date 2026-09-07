@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Track Grievance Redressal Status - GovTech CRM{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9 col-md-11">
+
+            <!-- Search Form -->
+            <div class="card gov-card shadow-sm border-0 mb-4 p-4" role="search">
+                <form action="{% url 'track_search' %}" method="GET" class="row g-2 align-items-center">
+                    <div class="col-md-9">
+                        <label for="trackGrievanceIdInput" class="form-label fw-bold text-dark mb-1" data-i18n="track_card_label">Track Another Grievance by ID:</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light text-primary"><i class="bi bi-search" aria-hidden="true"></i></span>
+                            <input id="trackGrievanceIdInput" type="number" name="id" class="form-control form-control-lg" data-i18n-placeholder="track_input_placeholder" placeholder="Enter Grievance Reference ID (e.g. 1, 2, 102)" value="{% if complaint %}{{ complaint.id }}{% endif %}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mt-md-4 pt-md-2">
+                        <button type="submit" class="btn btn-gov-primary btn-lg w-100">
+                            <i class="bi bi-compass me-1" aria-hidden="true"></i> <span data-i18n="btn_track_now">Track Now</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            {% if complaint %}
+                <!-- Complaint Details & Timeline Card -->
+                <div class="card gov-card shadow-lg border-0 overflow-hidden mb-5">
+                    <div class="gov-card-header d-flex flex-wrap justify-content-between align-items-center py-3">
+                        <div>
+                            <span class="badge bg-warning text-dark px-3 py-1 rounded-pill mb-1">Grievance Case #{{ complaint.id }}</span>
+                            <h4 class="mb-0 fw-bold text-white">{{ complaint.title }}</h4>
+                        </div>
+                        <div class="mt-2 mt-md-0">
+                            {% if complaint.status == 'Resolved' %}
+                                <span class="badge bg-success fs-6 px-3 py-2 rounded-pill"><i class="bi bi-check-circle-fill me-1" aria-hidden="true"></i> <span data-i18n="status_resolved">Resolved</span></span>
+                            {% elif complaint.status == 'In Progress' %}
+                                <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill"><i class="bi bi-arrow-repeat me-1" aria-hidden="true"></i> <span data-i18n="status_in_progress">In Progress</span></span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill"><i class="bi bi-clock-history me-1" aria-hidden="true"></i> <span data-i18n="status_pending">Pending</span></span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card-body p-4 p-md-5">
+
+                        <!-- Interactive 5-Step Visual Timeline -->
+                        <div class="mb-5 pb-3">
+                            <h6 class="text-uppercase text-muted fw-bold mb-4 text-center" data-i18n="timeline_heading">Grievance Life Cycle & Progress Tracker</h6>
+                            
+                            <div class="row text-center position-relative">
+                                <!-- Step 1: Lodged -->
+                                <div class="col timeline-step completed">
+                                    <div class="timeline-step-icon" aria-hidden="true">
+                                        <i class="bi bi-journal-check fs-5"></i>
+                                    </div>
+                                    <div class="fw-bold small text-dark" data-i18n="stage_lodged">Lodged</div>
+                                    <small class="text-muted d-block">{{ complaint.created_at|date:"d M, H:i" }}</small>
+                                </div>
+
+                                <!-- Step 2: Categorized & Assigned -->
+                                <div class="col timeline-step completed">
+                                    <div class="timeline-step-icon" aria-hidden="true">
+                                        <i class="bi bi-diagram-3-fill fs-5"></i>
+                                    </div>
+                                    <div class="fw-bold small text-dark" data-i18n="stage_assigned">Auto-Assigned</div>
+                                    <small class="text-muted d-block">{{ complaint.get_category_display }}</small>
+                                </div>
+
+                                <!-- Step 3: In Progress / Inspection -->
+                                <div class="col timeline-step {% if complaint.status == 'In Progress' %}active{% elif complaint.status == 'Resolved' %}completed{% endif %}">
+                                    <div class="timeline-step-icon" aria-hidden="true">
+                                        <i class="bi bi-gear-fill fs-5"></i>
+                                    </div>
+                                    <div class="fw-bold small text-dark" data-i18n="stage_inprogress">In Progress</div>
+                                    <small class="text-muted d-block">Inspection</small>
+                                </div>
+
+                                <!-- Step 4: Redressal Actions -->
+                                <div class="col timeline-step {% if complaint.status == 'Resolved' %}completed{% endif %}">
+                                    <div class="timeline-step-icon" aria-hidden="true">
+                                        <i class="bi bi-tools fs-5"></i>
+                                    </div>
+                                    <div class="fw-bold small text-dark" data-i18n="stage_action">Action Taken</div>
+                                    <small class="text-muted d-block">Department</small>
+                                </div>
+
+                                <!-- Step 5: Final Resolution -->
+                                <div class="col timeline-step {% if complaint.status == 'Resolved' %}completed{% endif %}">
+                                    <div class="timeline-step-icon" aria-hidden="true">
+                                        <i class="bi bi-patch-check-fill fs-5"></i>
+                                    </div>
+                                    <div class="fw-bold small text-dark" data-i18n="stage_resolved">Resolved</div>
+                                    <small class="text-muted d-block">Closed</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SLA Countdown Alert Box -->
+                        <div class="alert {% if complaint.status == 'Resolved' %}alert-success{% elif complaint.sla_status == 'breached' %}alert-danger{% elif complaint.sla_status == 'approaching' %}alert-warning{% else %}alert-info{% endif %} d-flex align-items-center justify-content-between p-3 rounded-3 mb-4">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi {% if complaint.status == 'Resolved' %}bi-check-circle-fill{% elif complaint.sla_status == 'breached' %}bi-exclamation-triangle-fill{% else %}bi-clock-fill{% endif %} fs-3" aria-hidden="true"></i>
+                                <div>
+                                    <div class="fw-bold">
+                                        {% if complaint.status == 'Resolved' %}
+                                            <span data-i18n="sla_box_resolved">Grievance Successfully Redressed within Government SLA</span>
+                                        {% elif complaint.sla_status == 'breached' %}
+                                            <span data-i18n="sla_box_breached">SLA Target Date Breached — Automatically Escalated to District Collector</span>
+                                        {% elif complaint.sla_status == 'approaching' %}
+                                            <span data-i18n="sla_box_approaching">SLA Approaching Deadline — High Priority Redressal Active</span>
+                                        {% else %}
+                                            <span data-i18n="sla_box_ontrack">SLA Active: Expected Target Completion in Days</span>
+                                        {% endif %}
+                                    </div>
+                                    <small><span data-i18n="target_date_label">Target Completion Date:</span> <strong>{{ complaint.sla_deadline|date:"d F Y" }}</strong> ({{ complaint.priority|title }})</small>
+                                </div>
+                            </div>
+                            <span class="badge {% if complaint.status == 'Resolved' %}bg-success{% elif complaint.sla_status == 'breached' %}bg-danger{% else %}bg-primary{% endif %} px-3 py-2 rounded-pill">
+                                SLA: {{ complaint.sla_days }} Days
+                            </span>
+                        </div>
+
+                        <!-- Full Grievance Detail Table -->
+                        <div class="table-responsive mb-4">
+                            <table class="table table-bordered table-striped align-middle mb-0">
+                                <tbody>
+                                    <tr>
+                                        <th style="width: 25%;" class="bg-light" data-i18n="th_citizen_name">Citizen Name</th>
+                                        <td><strong>{{ complaint.name }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light" data-i18n="th_assigned_dept">Assigned Authority</th>
+                                        <td>
+                                            <span class="text-primary fw-semibold">{{ complaint.assigned_authority|default:"Department of Public Grievances" }}</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light" data-i18n="th_location">Location / Ward</th>
+                                        <td><i class="bi bi-geo-alt-fill text-danger me-1" aria-hidden="true"></i> {{ complaint.location }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light" data-i18n="th_language">Submission Language</th>
+                                        <td><span class="badge bg-secondary">{{ complaint.language|title }}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <th class="bg-light" data-i18n="th_citizen_desc">Citizen Description</th>
+                                        <td>{{ complaint.complaint_text }}</td>
+                                    </tr>
+                                    {% if complaint.translated_text and complaint.language != 'english' %}
+                                        <tr>
+                                            <th class="bg-light text-primary" data-i18n="th_translated_desc">Auto-Translated (EN)</th>
+                                            <td class="text-muted">{{ complaint.translated_text }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if complaint.admin_remarks %}
+                                        <tr>
+                                            <th class="bg-light text-success" data-i18n="th_admin_remarks">Official Redressal Remarks</th>
+                                            <td class="fw-semibold text-success">{{ complaint.admin_remarks }}</td>
+                                        </tr>
+                                    {% endif %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Media Attachment Preview -->
+                        {% if complaint.attachment %}
+                            <div class="card p-3 mb-4 bg-light border">
+                                <h6 class="fw-bold mb-3"><i class="bi bi-paperclip text-primary me-1" aria-hidden="true"></i> <span data-i18n="lbl_evidence">Attached Evidence:</span></h6>
+                                <div class="text-center">
+                                    {% if complaint.is_image_attachment %}
+                                        <img src="{{ complaint.attachment.url }}" alt="Evidence" class="img-fluid rounded shadow-sm" style="max-height: 380px;">
+                                    {% elif complaint.is_video_attachment %}
+                                        <video controls class="rounded shadow-sm" style="max-height: 380px; width: 100%;">
+                                            <source src="{{ complaint.attachment.url }}">
+                                        </video>
+                                    {% else %}
+                                        <a href="{{ complaint.attachment.url }}" target="_blank" class="btn btn-outline-primary rounded-pill px-4">
+                                            <i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i> Download / View Attached File
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 pt-3 border-top">
+                            <a href="{% url 'citizen_dashboard' %}" class="btn btn-outline-secondary rounded-pill px-4">
+                                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i> <span data-i18n="btn_return_dashboard">Return to Dashboard</span>
+                            </a>
+
+                            {% if complaint.status != 'Resolved' %}
+                                <form action="{% url 'update_status' complaint.id %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="status" value="Resolved">
+                                    <input type="hidden" name="admin_remarks" value="Citizen verified redressal on ground.">
+                                    <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm">
+                                        <i class="bi bi-patch-check-fill me-1" aria-hidden="true"></i> <span data-i18n="btn_confirm_resolved">Confirm & Mark Resolved</span>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                    </div>
+                </div>
+            {% else %}
+                <div class="card gov-card shadow-sm border-0 p-5 text-center">
+                    <div class="gov-emblem-badge mx-auto mb-3" style="width: 60px; height: 60px;" aria-hidden="true">
+                        <i class="bi bi-search fs-3"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark" data-i18n="track_empty_title">Track Your Grievance Status</h4>
+                    <p class="text-muted" style="max-width: 500px; margin: 0 auto;" data-i18n="track_empty_desc">
+                        Please enter a valid Grievance ID in the search box above to inspect real-time progress, assigned departmental authority, and resolution remarks.
+                    </p>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

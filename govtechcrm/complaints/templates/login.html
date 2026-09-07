@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Login - GovTech CRM Portal{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card gov-card shadow-lg border-0 overflow-hidden">
+                <div class="gov-card-header text-center py-4">
+                    <div class="gov-emblem-badge mx-auto mb-2" style="width: 44px; height: 44px;" aria-hidden="true">
+                        <i class="bi bi-shield-lock-fill fs-5"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1" data-i18n="login_title">Portal Login</h3>
+                    <p class="small text-warning mb-0" data-i18n="login_sub">Secure Citizen & Administrative Access</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form method="POST" action="{% url 'login' %}">
+                        {% csrf_token %}
+
+                        <!-- Role Selector -->
+                        <div class="mb-3">
+                            <label for="roleSelector" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-person-badge text-primary me-1" aria-hidden="true"></i> <span data-i18n="role_label">Select Role</span>
+                            </label>
+                            <select id="roleSelector" name="role" class="form-select form-select-lg">
+                                <option value="citizen" data-i18n="role_citizen_opt" selected>Citizen / General User</option>
+                                <option value="admin" data-i18n="role_admin_opt">Administrator / Grievance Officer</option>
+                            </select>
+                        </div>
+
+                        <!-- Login ID / Username -->
+                        <div class="mb-3">
+                            <label for="loginIdInput" class="form-label fw-semibold text-dark">
+                                <i class="bi bi-person-fill text-primary me-1" aria-hidden="true"></i> <span data-i18n="login_id_label">Login ID / Username</span>
+                            </label>
+                            <input id="loginIdInput" type="text" name="username" class="form-control form-control-lg" data-i18n-placeholder="login_id_placeholder" placeholder="Enter your username or ID" required autofocus>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="loginPasswordInput" class="form-label fw-semibold text-dark mb-0">
+                                    <i class="bi bi-key-fill text-primary me-1" aria-hidden="true"></i> <span data-i18n="password_label">Password</span>
+                                </label>
+                                <a href="#" class="small text-decoration-none text-primary" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal" data-i18n="forgot_password_link">
+                                    Forgot Password?
+                                </a>
+                            </div>
+                            <input id="loginPasswordInput" type="password" name="password" class="form-control form-control-lg" data-i18n-placeholder="password_placeholder" placeholder="Enter password" required>
+                        </div>
+
+                        <!-- Remember Me -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label text-muted small" for="rememberMe" data-i18n="remember_me_label">
+                                Keep me signed in on this civic device
+                            </label>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-gov-primary btn-lg w-100 mb-3">
+                            <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i> <span data-i18n="login_btn">Sign In to GovTech</span>
+                        </button>
+                    </form>
+
+                    <!-- Fast 1-Click Demo Evaluation Login Buttons -->
+                    <div class="pt-3 border-top text-center">
+                        <span class="small text-muted d-block mb-2" data-i18n="quick_demo_login_label">Quick 1-Click Evaluation Logins:</span>
+                        <div class="d-flex gap-2 justify-content-center">
+                            <a href="{% url 'demo_login' 'citizen' %}" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                <i class="bi bi-person-check-fill me-1" aria-hidden="true"></i> <span data-i18n="demo_citizen_btn">Demo Citizen</span>
+                            </a>
+                            <a href="{% url 'demo_login' 'admin' %}" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                                <i class="bi bi-shield-lock-fill text-warning me-1" aria-hidden="true"></i> <span data-i18n="demo_admin_btn">Demo Admin</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-footer bg-light text-center py-3">
+                    <p class="small text-muted mb-0">
+                        <span data-i18n="no_account_text">Don't have a GovTech CRM account?</span> 
+                        <a href="{% url 'register' %}" class="fw-bold text-primary text-decoration-none" data-i18n="sign_up_link">Register here</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forgot Password Modal -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content gov-card">
+            <div class="modal-header gov-card-header text-white">
+                <h5 class="modal-title" id="forgotPasswordModalLabel"><i class="bi bi-shield-exclamation text-warning me-2" aria-hidden="true"></i> <span data-i18n="forgot_modal_title">Reset GovTech Credentials</span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-secondary small mb-3" data-i18n="forgot_modal_desc">
+                    Enter your registered Mobile Number or Email ID. An OTP will be dispatched via government SMS gateway for instant credential verification.
+                </p>
+                <div class="mb-3">
+                    <label for="forgotContactInput" class="form-label fw-semibold" data-i18n="forgot_input_label">Registered Mobile or Email</label>
+                    <input id="forgotContactInput" type="text" class="form-control" placeholder="e.g. 9876543210 or citizen@nic.in">
+                </div>
+                <div class="alert alert-info py-2 small mb-0">
+                    <i class="bi bi-info-circle-fill me-1" aria-hidden="true"></i> <span data-i18n="forgot_admin_notice">For administrative credentials, please contact your District Nodal Officer.</span>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal" data-i18n="forgot_cancel_btn">Cancel</button>
+                <button type="button" class="btn btn-gov-primary rounded-pill px-4" onclick="alert('Demo OTP has been simulated.');" data-bs-dismiss="modal" data-i18n="forgot_submit_btn">Send OTP</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

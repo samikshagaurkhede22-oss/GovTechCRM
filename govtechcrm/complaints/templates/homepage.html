@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}GovTech CRM - Transparent Citizen Grievance Portal{% endblock %}
+
+{% block content %}
+<!-- Unified Home / Welcome Section with Golden Sanskrit Greeting -->
+<section class="hero-welcome-section text-center" aria-labelledby="welcomeHeading">
+    <div class="container position-relative" style="z-index: 5;">
+
+        <!-- Featured Banner Showcase Card (Displays High-Res Generated Banner Graphic) -->
+        <div class="welcome-banner-showcase mb-5" role="region" aria-label="GovTech Official Welcome Banner">
+            <img src="{% static 'images/govtech_welcome_banner.jpg' %}" alt="GovTech CRM Official Welcome Banner with Namaste, Namaskaram in golden Sanskrit, gentle sunburst glow, and Indian skyline silhouette" class="img-fluid">
+        </div>
+
+        <!-- Centerpiece: Golden Sanskrit "नमस्कारम्" Typography -->
+        <h1 id="welcomeHeading" class="sanskrit-namaskaram mt-2 mb-3" data-i18n="namaskaram">नमस्कारम्</h1>
+        
+        <!-- Hero Subtitle & Welcome Text -->
+        <h2 class="h4 fw-semibold text-primary mb-3" data-i18n="hero_tagline">
+            Empowering Every Citizen with Transparent, Time-Bound Grievance Redressal
+        </h2>
+        <p class="lead text-secondary mx-auto mb-4" style="max-width: 780px;" data-i18n="hero_desc">
+            A unified digital governance platform connecting citizens directly with municipal, state, and central departments. Submit complaints, track status in real-time, and ensure accountability through SLA-backed resolution.
+        </p>
+
+        <!-- Primary Action Buttons: Login | Register | About | Contact -->
+        <div class="d-flex flex-wrap justify-content-center gap-3 mb-5">
+            <a href="{% url 'login' %}" class="btn btn-gov-primary px-4 py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-box-arrow-in-right fs-5" aria-hidden="true"></i>
+                <span data-i18n="btn_login">Login</span>
+            </a>
+            <a href="{% url 'register' %}" class="btn btn-gov-gold px-4 py-2 d-flex align-items-center gap-2">
+                <i class="bi bi-person-plus-fill fs-5" aria-hidden="true"></i>
+                <span data-i18n="btn_register">Register</span>
+            </a>
+            <button type="button" class="btn btn-gov-outline px-4 py-2 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                <i class="bi bi-info-circle-fill text-primary fs-5" aria-hidden="true"></i>
+                <span data-i18n="btn_about_modal">About GovTech CRM</span>
+            </button>
+            <button type="button" class="btn btn-gov-outline px-4 py-2 d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#contactModal">
+                <i class="bi bi-headset text-success fs-5" aria-hidden="true"></i>
+                <span data-i18n="btn_contact_modal">Helpline & Contact</span>
+            </button>
+        </div>
+
+        <!-- Instant Grievance Tracking Quick Search -->
+        <div class="card gov-card mx-auto shadow-sm p-3 mb-4" style="max-width: 650px;">
+            <form action="{% url 'track_search' %}" method="GET" class="d-flex flex-column flex-sm-row gap-2" role="search">
+                <div class="input-group">
+                    <span class="input-group-text bg-light text-primary"><i class="bi bi-search" aria-hidden="true"></i></span>
+                    <label for="quickTrackInput" class="visually-hidden">Enter Grievance Reference ID</label>
+                    <input id="quickTrackInput" type="number" name="id" class="form-control form-control-lg" data-i18n-placeholder="track_quick_placeholder" placeholder="Enter Grievance ID (e.g. 1, 2, 102)..." required>
+                </div>
+                <button type="submit" class="btn btn-gov-primary text-nowrap px-4 py-2">
+                    <i class="bi bi-compass me-1" aria-hidden="true"></i> <span data-i18n="track_quick_btn">Track Grievance</span>
+                </button>
+            </form>
+        </div>
+
+        <!-- Quick 1-Click Evaluation Shortcuts -->
+        <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap text-muted small mt-3">
+            <span class="badge bg-secondary" data-i18n="quick_demo_label">Quick Demo Access:</span>
+            <a href="{% url 'demo_login' 'citizen' %}" class="btn btn-sm btn-outline-primary py-1 px-3 rounded-pill">
+                <i class="bi bi-person-check-fill me-1" aria-hidden="true"></i> <span data-i18n="demo_citizen_btn">Demo Citizen Portal</span>
+            </a>
+            <a href="{% url 'demo_login' 'admin' %}" class="btn btn-sm btn-outline-dark py-1 px-3 rounded-pill">
+                <i class="bi bi-shield-lock-fill text-warning me-1" aria-hidden="true"></i> <span data-i18n="demo_admin_btn">Demo Admin Dashboard</span>
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Indian Skyline Silhouette Watermark at the Bottom Horizon -->
+    <div class="indian-skyline-silhouette" role="presentation"></div>
+</section>
+
+<!-- Public Transparency Live Counters -->
+<section class="py-5 bg-white border-bottom" aria-label="Public Grievance Counters">
+    <div class="container">
+        <div class="row g-4 text-center">
+            <div class="col-md-3 col-6">
+                <div class="p-3">
+                    <div class="display-5 fw-bold text-primary mb-1">{{ total_complaints|default:"1,248" }}</div>
+                    <div class="text-uppercase small text-muted fw-semibold" data-i18n="stat_total_registered">Total Grievances Registered</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3">
+                    <div class="display-5 fw-bold text-success mb-1">{{ resolved_complaints|default:"1,142" }}</div>
+                    <div class="text-uppercase small text-muted fw-semibold" data-i18n="stat_redressed">Successfully Redressed</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3">
+                    <div class="display-5 fw-bold text-warning mb-1">{{ pending_complaints|default:"82" }}</div>
+                    <div class="text-uppercase small text-muted fw-semibold" data-i18n="stat_under_investigation">Under Investigation</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3">
+                    <div class="display-5 fw-bold text-info mb-1">{{ resolution_rate|default:"94" }}%</div>
+                    <div class="text-uppercase small text-muted fw-semibold" data-i18n="stat_sla_compliance">SLA Compliance Rate</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4-Step Civic Redressal Process -->
+<section class="py-5 bg-light" aria-label="Civic Process Workflow">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill text-uppercase fw-bold mb-2" data-i18n="process_badge">Transparent Process</span>
+            <h3 class="fw-bold text-dark" data-i18n="process_heading">How GovTech CRM Resolves Your Grievance</h3>
+            <p class="text-muted" data-i18n="process_sub">A streamlined 4-step digital journey ensuring time-bound redressal.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 border-0 shadow-sm p-4 text-center rounded-4">
+                    <div class="namaste-icon-wrapper mx-auto mb-3" style="width: 70px; height: 70px;" aria-hidden="true">
+                        <i class="bi bi-pencil-square fs-2 text-primary"></i>
+                    </div>
+                    <h5 class="fw-bold" data-i18n="step1_title">1. Submit Grievance</h5>
+                    <p class="text-muted small mb-0" data-i18n="step1_desc">Describe the issue in your local language or use Voice Input. Attach photos, videos, or documents.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 border-0 shadow-sm p-4 text-center rounded-4">
+                    <div class="namaste-icon-wrapper mx-auto mb-3" style="width: 70px; height: 70px;" aria-hidden="true">
+                        <i class="bi bi-robot fs-2 text-success"></i>
+                    </div>
+                    <h5 class="fw-bold" data-i18n="step2_title">2. AI Auto-Routing</h5>
+                    <p class="text-muted small mb-0" data-i18n="step2_desc">Smart category classification routes the grievance to the respective department with SLA deadline assigned.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 border-0 shadow-sm p-4 text-center rounded-4">
+                    <div class="namaste-icon-wrapper mx-auto mb-3" style="width: 70px; height: 70px;" aria-hidden="true">
+                        <i class="bi bi-shield-check fs-2 text-warning"></i>
+                    </div>
+                    <h5 class="fw-bold" data-i18n="step3_title">3. On-Ground Action</h5>
+                    <p class="text-muted small mb-0" data-i18n="step3_desc">Departmental officers inspect the site, log progress remarks, and upload resolution verification proofs.</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="card h-100 border-0 shadow-sm p-4 text-center rounded-4">
+                    <div class="namaste-icon-wrapper mx-auto mb-3" style="width: 70px; height: 70px;" aria-hidden="true">
+                        <i class="bi bi-patch-check-fill fs-2 text-info"></i>
+                    </div>
+                    <h5 class="fw-bold" data-i18n="step4_title">4. Redressal & Feedback</h5>
+                    <p class="text-muted small mb-0" data-i18n="step4_desc">The citizen receives an instant notification upon resolution and can review officer remarks.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Major Public Domains Covered -->
+<section class="py-5 bg-white" aria-label="Departments Covered">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="badge bg-warning bg-opacity-10 text-dark px-3 py-2 rounded-pill text-uppercase fw-bold mb-2" data-i18n="dept_badge">Departments & Domains</span>
+            <h3 class="fw-bold text-dark" data-i18n="dept_heading">Major Public Services Covered</h3>
+            <p class="text-muted" data-i18n="dept_sub">Instant routing across urban and rural administrative authorities.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded-3 text-center">
+                    <i class="bi bi-droplet-half text-primary fs-1 mb-2 d-block" aria-hidden="true"></i>
+                    <h6 class="fw-bold mb-1" data-i18n="dept_water">Water Supply</h6>
+                    <small class="text-muted" data-i18n="dept_water_sub">Pipelines, Quality & Billing</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded-3 text-center">
+                    <i class="bi bi-lightning-charge text-warning fs-1 mb-2 d-block" aria-hidden="true"></i>
+                    <h6 class="fw-bold mb-1" data-i18n="dept_elec">Electricity & Power</h6>
+                    <small class="text-muted" data-i18n="dept_elec_sub">Outages, Metering & Transformers</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded-3 text-center">
+                    <i class="bi bi-cone-striped text-danger fs-1 mb-2 d-block" aria-hidden="true"></i>
+                    <h6 class="fw-bold mb-1" data-i18n="dept_roads">Roads & PWD</h6>
+                    <small class="text-muted" data-i18n="dept_roads_sub">Potholes, Streetlights & Bridges</small>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="p-3 border rounded-3 text-center">
+                    <i class="bi bi-trash text-success fs-1 mb-2 d-block" aria-hidden="true"></i>
+                    <h6 class="fw-bold mb-1" data-i18n="dept_sanitation">Sanitation & Waste</h6>
+                    <small class="text-muted" data-i18n="dept_sanitation_sub">Garbage Clearance & Drainage</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Submit Complaint - GovTech CRM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-0 rounded-lg mt-5">
+            <div class="card-header bg-success text-white text-center">
+                <h3 class="font-weight-light my-2">Submit a Complaint</h3>
+            </div>
+            <div class="card-body">
+                <p class="text-muted text-center mb-4">
+                    Please fill out the form below to submit your complaint. We'll provide you with a unique ID for
+                    tracking.
+                </p>
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.as_p }}
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-success btn-lg">Submit Complaint</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

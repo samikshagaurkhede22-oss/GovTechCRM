@@ -1,0 +1,447 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Administrative Command Console - GovTech CRM{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-4">
+    <!-- Header with Official Controls -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="fw-bold mb-0 text-primary" data-i18n="admin_console_title">Grievance Redressal Administration</h2>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary rounded-pill px-3">
+                    <i class="bi bi-shield-lock-fill me-1" aria-hidden="true"></i> <span data-i18n="admin_badge">Officer Level Access</span>
+                </span>
+            </div>
+            <p class="text-muted mb-0" data-i18n="admin_sub">
+                Central Monitoring System | SLA Compliance & Departmental Action Console
+            </p>
+        </div>
+        <div class="mt-3 mt-md-0 d-flex gap-2">
+            <!-- Export Excel / CSV -->
+            <a href="{% url 'export_complaints_csv' %}" class="btn btn-outline-success d-flex align-items-center gap-2" aria-label="Export complaints report as CSV or Excel">
+                <i class="bi bi-file-earmark-spreadsheet-fill fs-5" aria-hidden="true"></i>
+                <span data-i18n="btn_export_csv">Export Excel / CSV</span>
+            </a>
+            <!-- Export PDF / Printable Report -->
+            <button type="button" class="btn btn-gov-primary d-flex align-items-center gap-2" onclick="printGovReport()" aria-label="Print or save report as PDF">
+                <i class="bi bi-printer-fill fs-5" aria-hidden="true"></i>
+                <span data-i18n="btn_print_pdf">Print / PDF Report</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Executive KPI Counters -->
+    <div class="row g-3 mb-4">
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="kpi-card">
+                <div class="text-muted small fw-semibold" data-i18n="kpi_total_inflow">Total Grievances</div>
+                <h3 class="fw-bold text-dark mb-0">{{ total_complaints }}</h3>
+                <small class="text-secondary"><i class="bi bi-inbox" aria-hidden="true"></i> Inflow</small>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="kpi-card amber">
+                <div class="text-muted small fw-semibold" data-i18n="kpi_pending_action">Pending Triage</div>
+                <h3 class="fw-bold text-warning mb-0">{{ pending_count }}</h3>
+                <small class="text-warning"><i class="bi bi-hourglass-top" aria-hidden="true"></i> Required</small>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="kpi-card">
+                <div class="text-muted small fw-semibold" data-i18n="kpi_under_investigation">In Progress</div>
+                <h3 class="fw-bold text-primary mb-0">{{ in_progress_count }}</h3>
+                <small class="text-primary"><i class="bi bi-gear-fill" aria-hidden="true"></i> Active</small>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="kpi-card green">
+                <div class="text-muted small fw-semibold" data-i18n="kpi_resolved_cases">Resolved Redressed</div>
+                <h3 class="fw-bold text-success mb-0">{{ resolved_count }}</h3>
+                <small class="text-success"><i class="bi bi-check-all" aria-hidden="true"></i> Done</small>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="kpi-card red">
+                <div class="text-muted small fw-semibold" data-i18n="kpi_sla_breaches">SLA Breaches</div>
+                <h3 class="fw-bold text-danger mb-0">{{ sla_breaches }}</h3>
+                <small class="text-danger"><i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i> Critical</small>
+            </div>
+        </div>
+        <div class="col-xl-2 col-md-4 col-6">
+            <div class="kpi-card gold">
+                <div class="text-muted small fw-semibold" data-i18n="kpi_sla_score">SLA Adherence</div>
+                <h3 class="fw-bold text-dark mb-0">{{ sla_compliance }}%</h3>
+                <small class="text-muted"><i class="bi bi-award-fill text-warning" aria-hidden="true"></i> Target Score</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div class="card gov-card shadow-sm border-0 mb-4 p-3 no-print">
+        <form method="GET" action="{% url 'admin_dashboard' %}" class="row g-2 align-items-center" role="search">
+            <!-- Search Query -->
+            <div class="col-lg-3 col-md-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-light"><i class="bi bi-search" aria-hidden="true"></i></span>
+                    <label for="adminSearchInput" class="visually-hidden">Search records</label>
+                    <input id="adminSearchInput" type="text" name="q" class="form-control" data-i18n-placeholder="filter_search_placeholder" placeholder="Search by ID, citizen, title..." value="{{ search_query }}">
+                </div>
+            </div>
+
+            <!-- Category Filter -->
+            <div class="col-lg-2 col-md-3 col-6">
+                <label for="adminCatFilter" class="visually-hidden">Filter by Category</label>
+                <select id="adminCatFilter" name="category" class="form-select">
+                    <option value="" data-i18n="opt_all_categories">All Categories</option>
+                    <option value="water" data-i18n="cat_water" {% if current_category == 'water' %}selected{% endif %}>Water Supply</option>
+                    <option value="electricity" data-i18n="cat_electricity" {% if current_category == 'electricity' %}selected{% endif %}>Electricity</option>
+                    <option value="roads" data-i18n="cat_roads" {% if current_category == 'roads' %}selected{% endif %}>Roads & Infrastructure</option>
+                    <option value="sanitation" data-i18n="cat_sanitation" {% if current_category == 'sanitation' %}selected{% endif %}>Sanitation</option>
+                    <option value="health" data-i18n="cat_health" {% if current_category == 'health' %}selected{% endif %}>Healthcare</option>
+                    <option value="revenue" data-i18n="cat_revenue" {% if current_category == 'revenue' %}selected{% endif %}>Revenue & Land</option>
+                    <option value="education" data-i18n="cat_education" {% if current_category == 'education' %}selected{% endif %}>Education</option>
+                    <option value="other" data-i18n="cat_other" {% if current_category == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="col-lg-2 col-md-3 col-6">
+                <label for="adminStatFilter" class="visually-hidden">Filter by Status</label>
+                <select id="adminStatFilter" name="status" class="form-select">
+                    <option value="" data-i18n="opt_all_statuses">All Statuses</option>
+                    <option value="Pending" data-i18n="status_pending" {% if current_status == 'Pending' %}selected{% endif %}>Pending</option>
+                    <option value="In Progress" data-i18n="status_in_progress" {% if current_status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                    <option value="Resolved" data-i18n="status_resolved" {% if current_status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+
+            <!-- Location Filter -->
+            <div class="col-lg-2 col-md-4 col-6">
+                <label for="adminLocFilter" class="visually-hidden">Filter by Location</label>
+                <input id="adminLocFilter" type="text" name="location" class="form-control" data-i18n-placeholder="filter_location_placeholder" placeholder="Filter by Location/District" value="{{ current_location }}">
+            </div>
+
+            <!-- SLA Status Filter -->
+            <div class="col-lg-2 col-md-4 col-6">
+                <label for="adminSlaFilter" class="visually-hidden">Filter by SLA Status</label>
+                <select id="adminSlaFilter" name="sla" class="form-select">
+                    <option value="" data-i18n="opt_all_sla">All SLA Statuses</option>
+                    <option value="on_track" data-i18n="opt_sla_ontrack" {% if current_sla == 'on_track' %}selected{% endif %}>Within SLA</option>
+                    <option value="approaching" data-i18n="opt_sla_approaching" {% if current_sla == 'approaching' %}selected{% endif %}>Approaching Deadline</option>
+                    <option value="breached" data-i18n="opt_sla_breached" {% if current_sla == 'breached' %}selected{% endif %}>SLA Breached (Urgent)</option>
+                </select>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="col-lg-1 col-md-4 col-12 d-flex gap-1">
+                <button type="submit" class="btn btn-gov-primary w-100" title="Apply Filter" aria-label="Apply Filter">
+                    <i class="bi bi-funnel-fill" aria-hidden="true"></i> <span data-i18n="btn_apply_filter">Filter</span>
+                </button>
+                {% if search_query or current_category or current_status or current_location or current_sla %}
+                    <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary" title="Reset Filters" aria-label="Reset Filters">
+                        <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <!-- Grievance Management Table -->
+    <div class="card gov-card shadow-sm border-0 mb-5">
+        <div class="gov-card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-list-task me-2 text-warning" aria-hidden="true"></i> <span data-i18n="records_title">Grievance Redressal Records</span></h5>
+            <span class="badge bg-light text-dark rounded-pill">{{ complaints|length }} Records</span>
+        </div>
+        <div class="card-body p-0">
+            {% if complaints %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr class="small text-muted text-uppercase">
+                                <th style="width: 80px;">ID</th>
+                                <th data-i18n="th_id_title">Citizen & Title</th>
+                                <th>Department & Location</th>
+                                <th data-i18n="field_priority_label">Priority</th>
+                                <th data-i18n="th_sla_target">SLA Target</th>
+                                <th data-i18n="th_status">Status</th>
+                                <th class="text-end pe-4 no-print" data-i18n="th_officer_action">Review & Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in complaints %}
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold text-primary">#{{ c.id }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ c.title }}</div>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-person me-1" aria-hidden="true"></i>{{ c.name }} | 
+                                            <i class="bi bi-calendar3 me-1" aria-hidden="true"></i>{{ c.created_at|date:"d M Y" }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border">{{ c.get_category_display }}</span>
+                                        <div class="small text-muted"><i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ c.location }}</div>
+                                    </td>
+                                    <td>
+                                        {% if c.priority == 'emergency' %}
+                                            <span class="badge bg-danger" data-i18n="prio_emergency">Emergency</span>
+                                        {% elif c.priority == 'high' %}
+                                            <span class="badge bg-warning text-dark" data-i18n="prio_high">High</span>
+                                        {% elif c.priority == 'low' %}
+                                            <span class="badge bg-secondary" data-i18n="prio_low">Low</span>
+                                        {% else %}
+                                            <span class="badge bg-info text-dark" data-i18n="prio_medium">Medium</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if c.status == 'Resolved' %}
+                                            <span class="badge-sla badge-sla-resolved"><i class="bi bi-check2-all" aria-hidden="true"></i> <span data-i18n="status_resolved">Resolved</span></span>
+                                        {% elif c.sla_status == 'breached' %}
+                                            <span class="badge-sla badge-sla-breached"><i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i> <span data-i18n="sla_breached">SLA Breached</span></span>
+                                        {% elif c.sla_status == 'approaching' %}
+                                            <span class="badge-sla badge-sla-approaching"><i class="bi bi-stopwatch" aria-hidden="true"></i> <span data-i18n="sla_approaching">Approaching SLA</span></span>
+                                        {% else %}
+                                            <span class="badge-sla badge-sla-ontrack"><i class="bi bi-clock" aria-hidden="true"></i> {{ c.days_remaining }}d Left</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if c.status == 'Resolved' %}
+                                            <span class="badge bg-success" data-i18n="status_resolved">Resolved</span>
+                                        {% elif c.status == 'In Progress' %}
+                                            <span class="badge bg-primary" data-i18n="status_in_progress">In Progress</span>
+                                        {% else %}
+                                            <span class="badge bg-warning text-dark" data-i18n="status_pending">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end pe-4 no-print">
+                                        <button type="button" class="btn btn-sm btn-gov-primary rounded-pill px-3" data-bs-toggle="modal" data-bs-target="#actionModal{{ c.id }}" aria-label="Review grievance {{ c.id }}">
+                                            <i class="bi bi-eye me-1" aria-hidden="true"></i> <span data-i18n="btn_review_action">Review & Action</span>
+                                        </button>
+                                    </td>
+                                </tr>
+
+                                <!-- Modal: Review & Update for this complaint -->
+                                <div class="modal fade" id="actionModal{{ c.id }}" tabindex="-1" aria-labelledby="actionModalLabel{{ c.id }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content gov-card text-start">
+                                            <div class="modal-header gov-card-header text-white">
+                                                <h5 class="modal-title" id="actionModalLabel{{ c.id }}">
+                                                    <i class="bi bi-pencil-square text-warning me-2" aria-hidden="true"></i> <span data-i18n="modal_review_title">Review Grievance</span> #{{ c.id }}
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body p-4">
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="small text-muted fw-bold" data-i18n="lbl_citizen_name">Citizen Name:</label>
+                                                        <div class="fw-semibold">{{ c.name }}</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="small text-muted fw-bold" data-i18n="lbl_location_ward">Location / Ward:</label>
+                                                        <div class="fw-semibold">{{ c.location }}</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="small text-muted fw-bold" data-i18n="lbl_dept">Department:</label>
+                                                        <div>{{ c.assigned_authority|default:"Pending Assignment" }}</div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="small text-muted fw-bold" data-i18n="lbl_lodged_on">Lodged On:</label>
+                                                        <div>{{ c.created_at|date:"d M Y, H:i" }}</div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Original & Translated Text -->
+                                                <div class="mb-4">
+                                                    <label class="small text-muted fw-bold"><span data-i18n="lbl_original_text">Original Grievance Text:</span> ({{ c.language|title }}):</label>
+                                                    <div class="p-3 bg-light rounded border">{{ c.complaint_text }}</div>
+                                                </div>
+
+                                                {% if c.translated_text and c.language != 'english' %}
+                                                    <div class="mb-4">
+                                                        <label class="small text-muted fw-bold"><i class="bi bi-translate text-primary me-1" aria-hidden="true"></i> <span data-i18n="lbl_translated_text">Auto-Translated into English:</span></label>
+                                                        <div class="p-3 bg-info bg-opacity-10 rounded border border-info">{{ c.translated_text }}</div>
+                                                    </div>
+                                                {% endif %}
+
+                                                <!-- Attachment Preview -->
+                                                <div class="mb-4">
+                                                    <label class="small text-muted fw-bold"><i class="bi bi-paperclip me-1" aria-hidden="true"></i> <span data-i18n="lbl_evidence">Attached Evidence:</span></label>
+                                                    {% if c.attachment %}
+                                                        <div class="p-3 bg-light rounded border text-center">
+                                                            {% if c.is_image_attachment %}
+                                                                <img src="{{ c.attachment.url }}" alt="Evidence" class="img-fluid rounded" style="max-height: 300px;">
+                                                            {% elif c.is_video_attachment %}
+                                                                <video controls style="max-height: 300px; width: 100%;">
+                                                                    <source src="{{ c.attachment.url }}">
+                                                                </video>
+                                                            {% else %}
+                                                                <a href="{{ c.attachment.url }}" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill">
+                                                                    <i class="bi bi-file-earmark-arrow-down me-1" aria-hidden="true"></i> Download / View Attached File
+                                                                </a>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% else %}
+                                                        <div class="text-muted small p-2 bg-light rounded border" data-i18n="lbl_no_media">No media attachment uploaded.</div>
+                                                    {% endif %}
+                                                </div>
+
+                                                <!-- Status Update Form -->
+                                                <form method="POST" action="{% url 'update_status' c.id %}">
+                                                    {% csrf_token %}
+                                                    <div class="row g-3 p-3 bg-warning bg-opacity-10 rounded border border-warning">
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-bold text-dark" data-i18n="lbl_update_status">Update Resolution Status:</label>
+                                                            <select name="status" class="form-select">
+                                                                <option value="Pending" data-i18n="status_pending" {% if c.status == 'Pending' %}selected{% endif %}>Pending</option>
+                                                                <option value="In Progress" data-i18n="status_in_progress" {% if c.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                                                                <option value="Resolved" data-i18n="status_resolved" {% if c.status == 'Resolved' %}selected{% endif %}>Resolved</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <label class="form-label fw-bold text-dark" data-i18n="lbl_reassign_dept">Reassign Department:</label>
+                                                            <input type="text" name="assigned_authority" class="form-control" value="{{ c.assigned_authority }}">
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <label class="form-label fw-bold text-dark" data-i18n="lbl_admin_remarks">Official Remarks / Resolution Details:</label>
+                                                            <textarea name="admin_remarks" class="form-control" rows="3" data-i18n-placeholder="admin_remarks_placeholder" placeholder="Provide action notes, nodal officer report, or resolution summary. (Citizen will be notified)">{{ c.admin_remarks }}</textarea>
+                                                        </div>
+                                                        <div class="col-12 text-end">
+                                                            <button type="submit" class="btn btn-gov-primary rounded-pill px-4">
+                                                                <i class="bi bi-check2-circle me-1" aria-hidden="true"></i> <span data-i18n="btn_save_notify">Save & Notify Citizen</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-2 text-muted d-block mb-2" aria-hidden="true"></i>
+                    <h5 class="fw-bold" data-i18n="no_grievances_title">No Grievances Found</h5>
+                    <p class="text-muted small" data-i18n="no_grievances_desc">Try clearing filters or changing search keywords.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Performance Reports & Analytics Charts -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card gov-card shadow-sm border-0 h-100 p-3" role="region" aria-label="Complaints by Category Chart">
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-pie-chart-fill me-2 text-warning" aria-hidden="true"></i> <span data-i18n="chart_category_title">Complaints by Category</span></h6>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card gov-card shadow-sm border-0 h-100 p-3" role="region" aria-label="Resolution Status Chart">
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-bar-chart-fill me-2 text-success" aria-hidden="true"></i> <span data-i18n="chart_status_title">Resolution Status Distribution</span></h6>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card gov-card shadow-sm border-0 h-100 p-3" role="region" aria-label="Priority Chart">
+                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-speedometer2 me-2 text-danger" aria-hidden="true"></i> <span data-i18n="chart_priority_title">Inflow by Priority</span></h6>
+                <div style="height: 280px; position: relative;">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart Data Serialized Safely -->
+{{ category_data|json_script:"cat-data" }}
+{{ status_data|json_script:"stat-data" }}
+{{ priority_data|json_script:"prio-data" }}
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const catData = JSON.parse(document.getElementById('cat-data').textContent || '[]');
+    const statData = JSON.parse(document.getElementById('stat-data').textContent || '[]');
+    const prioData = JSON.parse(document.getElementById('prio-data').textContent || '[]');
+
+    const chartColors = [
+        '#134e8d', '#c59b27', '#10b981', '#ef4444', 
+        '#6366f1', '#f59e0b', '#06b6d4', '#8b5cf6'
+    ];
+
+    if (document.getElementById('categoryChart')) {
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catData.map(item => (item.category || 'General').toUpperCase()),
+                datasets: [{
+                    data: catData.map(item => item.count),
+                    backgroundColor: chartColors,
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+            }
+        });
+    }
+
+    if (document.getElementById('statusChart')) {
+        new Chart(document.getElementById('statusChart'), {
+            type: 'bar',
+            data: {
+                labels: statData.map(item => item.status),
+                datasets: [{
+                    label: 'Count',
+                    data: statData.map(item => item.count),
+                    backgroundColor: ['#f59e0b', '#134e8d', '#10b981'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    if (document.getElementById('priorityChart')) {
+        new Chart(document.getElementById('priorityChart'), {
+            type: 'pie',
+            data: {
+                labels: prioData.map(item => (item.priority || 'Medium').toUpperCase()),
+                datasets: [{
+                    data: prioData.map(item => item.count),
+                    backgroundColor: ['#64748b', '#0ea5e9', '#f59e0b', '#ef4444']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
